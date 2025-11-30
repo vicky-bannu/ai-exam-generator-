@@ -1,0 +1,7 @@
+flask
+flask-cors
+fpdf
+
+# Optional - for AI question generation and evaluation
+# google-generativeai
+

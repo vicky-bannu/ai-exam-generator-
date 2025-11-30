@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Exam Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            padding: 8px 16px;
+            font-size: 14px;
+            width: auto;
+            margin-top: 10px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 14px;
+            width: auto;
+            background: #17a2b8;
+            margin-left: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #dc3545;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+        }
+
+        .questions-container {
+            margin-top: 30px;
+        }
+
+        .questions-list {
+            list-style: none;
+            counter-reset: question-counter;
+        }
+
+        .question-item {
+            counter-increment: question-counter;
+            background: #f8f9fa;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            position: relative;
+        }
+
+        .question-item::before {
+            content: counter(question-counter) ". ";
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .question-text {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .evaluation-result {
+            margin-top: 15px;
+            padding: 12px;
+            background: #e7f3ff;
+            border-radius: 6px;
+            border-left: 3px solid #17a2b8;
+        }
+
+        .evaluation-result strong {
+            color: #667eea;
+        }
+
+        .pdf-download {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .pdf-download a {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 14px 28px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .pdf-download a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 20px;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 120px;
+            margin-bottom: 15px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .subject-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .subject-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 20px;
+            background: #f0f0f0;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .subject-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .subject-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .answer-box {
+            margin-top: 10px;
+            padding: 12px;
+            background: #e7f3ff;
+            border-radius: 6px;
+            border-left: 3px solid #17a2b8;
+        }
+
+        .answer-box strong {
+            color: #667eea;
+        }
+
+        .toggle-answer {
+            background: #6c757d;
+            padding: 4px 8px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 5% auto;
+                padding: 20px;
+            }
+
+            .subject-buttons {
+                flex-direction: column;
+            }
+
+            .subject-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Exam Generator</h1>
+        <p class="subtitle">Generate, Download, and Evaluate Exam Questions</p>
+
+        <form id="examForm" aria-label="Exam Generation Form">
+            <div class="form-group">
+                <label for="subject">Select Subject:</label>
+                <div class="subject-buttons" role="group" aria-label="Subject selection">
+                    <button type="button" class="subject-btn active" data-subject="Python">Python</button>
+                    <button type="button" class="subject-btn" data-subject="Machine Learning">Machine Learning</button>
+                    <button type="button" class="subject-btn" data-subject="Java">Java</button>
+                    <button type="button" class="subject-btn" data-subject="Database">Database</button>
+                </div>
+                <input 
+                    type="text" 
+                    id="subject" 
+                    name="subject" 
+                    required 
+                    value="Python"
+                    placeholder="Or enter custom subject"
+                    aria-required="true"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="numQuestions">Number of Questions:</label>
+                <input 
+                    type="number" 
+                    id="numQuestions" 
+                    name="numQuestions" 
+                    min="1" 
+                    max="20" 
+                    value="5" 
+                    required
+                    aria-required="true"
+                >
+            </div>
+
+            <button type="submit" id="generateBtn">Generate Exam</button>
+        </form>
+
+        <div id="loading" class="loading" style="display: none;" role="status" aria-live="polite">
+            <div class="spinner" aria-hidden="true"></div>
+            <p>Generating questions...</p>
+        </div>
+
+        <div id="error" class="error" style="display: none;" role="alert"></div>
+        <div id="success" class="success" style="display: none;" role="status"></div>
+
+        <div id="pdfDownload" class="pdf-download" style="display: none;">
+            <a id="pdfLink" href="#" target="_blank" download>Download PDF</a>
+        </div>
+
+        <div id="questionsContainer" class="questions-container" style="display: none;">
+            <h2>Generated Questions</h2>
+            <ol id="questionsList" class="questions-list" aria-label="Generated exam questions"></ol>
+        </div>
+    </div>
+
+    <!-- Modal for Answer Evaluation -->
+    <div id="evaluateModal" class="modal" role="dialog" aria-labelledby="modalTitle" aria-hidden="true">
+        <div class="modal-content">
+            <span class="close" id="closeModal" aria-label="Close modal">&times;</span>
+            <h2 id="modalTitle">Evaluate Answer</h2>
+            <p id="modalQuestion" class="question-text"></p>
+            <label for="studentAnswer">Student Answer:</label>
+            <textarea 
+                id="studentAnswer" 
+                placeholder="Enter the student's answer here..."
+                aria-required="true"
+            ></textarea>
+            <button type="button" id="evaluateBtn" class="btn-secondary">Evaluate</button>
+            <div id="evaluationResult" class="evaluation-result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================================
+        // API CONFIGURATION
+        // ============================================================================
+        // Change these URLs to match your backend API endpoints
+        const API_BASE_URL = 'http://localhost:5000'; // Change this to your API base URL
+        const GENERATE_ENDPOINT = `${API_BASE_URL}/generate`; // POST endpoint for generating questions
+        const EVALUATE_ENDPOINT = `${API_BASE_URL}/evaluate`; // POST endpoint for evaluating answers
+        // ============================================================================
+
+        // DOM Elements
+        const examForm = document.getElementById('examForm');
+        const generateBtn = document.getElementById('generateBtn');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const success = document.getElementById('success');
+        const questionsContainer = document.getElementById('questionsContainer');
+        const questionsList = document.getElementById('questionsList');
+        const pdfDownload = document.getElementById('pdfDownload');
+        const pdfLink = document.getElementById('pdfLink');
+        const evaluateModal = document.getElementById('evaluateModal');
+        const closeModal = document.getElementById('closeModal');
+        const modalQuestion = document.getElementById('modalQuestion');
+        const studentAnswer = document.getElementById('studentAnswer');
+        const evaluateBtn = document.getElementById('evaluateBtn');
+        const evaluationResult = document.getElementById('evaluationResult');
+
+        // Store current question being evaluated
+        let currentQuestionIndex = -1;
+
+        // Handle subject button clicks
+        document.querySelectorAll('.subject-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active class from all buttons
+                document.querySelectorAll('.subject-btn').forEach(b => b.classList.remove('active'));
+                // Add active class to clicked button
+                btn.classList.add('active');
+                // Update subject input
+                document.getElementById('subject').value = btn.dataset.subject;
+            });
+        });
+
+        // Utility function to show/hide elements
+        function showElement(element) {
+            element.style.display = 'block';
+        }
+
+        function hideElement(element) {
+            element.style.display = 'none';
+        }
+
+        function showError(message) {
+            error.textContent = message;
+            showElement(error);
+            hideElement(success);
+        }
+
+        function showSuccess(message) {
+            success.textContent = message;
+            showElement(success);
+            hideElement(error);
+        }
+
+        function hideMessages() {
+            hideElement(error);
+            hideElement(success);
+        }
+
+        // Handle form submission
+        examForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const subject = document.getElementById('subject').value.trim();
+            const numQuestions = parseInt(document.getElementById('numQuestions').value);
+
+            if (!subject) {
+                showError('Please enter a subject/topic.');
+                return;
+            }
+
+            // Show loading state
+            hideMessages();
+            showElement(loading);
+            hideElement(questionsContainer);
+            hideElement(pdfDownload);
+            generateBtn.disabled = true;
+
+            try {
+                // Call the generate API
+                const response = await fetch(GENERATE_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        subject: subject,
+                        num_questions: numQuestions
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Hide loading
+                hideElement(loading);
+                generateBtn.disabled = false;
+
+                // Check if we got questions
+                if (data.questions && Array.isArray(data.questions) && data.questions.length > 0) {
+                    displayQuestions(data.questions);
+                    
+                    // Show PDF download if URL is provided
+                    if (data.pdf_url) {
+                        pdfLink.href = data.pdf_url;
+                        showElement(pdfDownload);
+                    }
+                    
+                    showSuccess(`Successfully generated ${data.questions.length} questions!`);
+                } else {
+                    throw new Error('No questions received from the server.');
+                }
+
+            } catch (err) {
+                hideElement(loading);
+                generateBtn.disabled = false;
+                showError(`Failed to generate questions: ${err.message}. Please check your API connection.`);
+                console.error('Error:', err);
+            }
+        });
+
+        // Display questions on the page
+        function displayQuestions(questions) {
+            questionsList.innerHTML = '';
+            
+            questions.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.className = 'question-item';
+                
+                // Handle both old format (string) and new format (object with question/answer)
+                const questionText = typeof item === 'string' ? item : (item.question || item);
+                const answerText = typeof item === 'object' && item.answer ? item.answer : null;
+                
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question-text';
+                questionDiv.textContent = questionText;
+                
+                const buttonContainer = document.createElement('div');
+                buttonContainer.style.marginTop = '10px';
+                
+                const evaluateButton = document.createElement('button');
+                evaluateButton.className = 'btn-small';
+                evaluateButton.textContent = 'Evaluate';
+                evaluateButton.setAttribute('aria-label', `Evaluate answer for question ${index + 1}`);
+                evaluateButton.addEventListener('click', () => openEvaluateModal(questionText, index));
+                
+                buttonContainer.appendChild(evaluateButton);
+                
+                // Add answer display if available
+                if (answerText) {
+                    const toggleAnswerBtn = document.createElement('button');
+                    toggleAnswerBtn.className = 'btn-small toggle-answer';
+                    toggleAnswerBtn.textContent = 'Show Answer';
+                    toggleAnswerBtn.setAttribute('aria-label', `Toggle answer for question ${index + 1}`);
+                    
+                    const answerBox = document.createElement('div');
+                    answerBox.className = 'answer-box';
+                    answerBox.style.display = 'none';
+                    answerBox.innerHTML = `<strong>Answer:</strong> ${answerText}`;
+                    
+                    toggleAnswerBtn.addEventListener('click', () => {
+                        if (answerBox.style.display === 'none') {
+                            answerBox.style.display = 'block';
+                            toggleAnswerBtn.textContent = 'Hide Answer';
+                        } else {
+                            answerBox.style.display = 'none';
+                            toggleAnswerBtn.textContent = 'Show Answer';
+                        }
+                    });
+                    
+                    buttonContainer.appendChild(toggleAnswerBtn);
+                    li.appendChild(questionDiv);
+                    li.appendChild(buttonContainer);
+                    li.appendChild(answerBox);
+                } else {
+                    li.appendChild(questionDiv);
+                    li.appendChild(buttonContainer);
+                }
+                
+                questionsList.appendChild(li);
+            });
+            
+            showElement(questionsContainer);
+        }
+
+        // Open evaluation modal
+        function openEvaluateModal(question, index) {
+            currentQuestionIndex = index;
+            // Extract question text if it's an object
+            const questionText = typeof question === 'string' ? question : (question.question || question);
+            modalQuestion.textContent = questionText;
+            studentAnswer.value = '';
+            hideElement(evaluationResult);
+            evaluateModal.setAttribute('aria-hidden', 'false');
+            showElement(evaluateModal);
+            studentAnswer.focus();
+        }
+
+        // Close modal
+        closeModal.addEventListener('click', () => {
+            evaluateModal.setAttribute('aria-hidden', 'true');
+            hideElement(evaluateModal);
+        });
+
+        // Close modal when clicking outside
+        evaluateModal.addEventListener('click', (e) => {
+            if (e.target === evaluateModal) {
+                evaluateModal.setAttribute('aria-hidden', 'true');
+                hideElement(evaluateModal);
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && evaluateModal.style.display === 'block') {
+                evaluateModal.setAttribute('aria-hidden', 'true');
+                hideElement(evaluateModal);
+            }
+        });
+
+        // Handle evaluation
+        evaluateBtn.addEventListener('click', async () => {
+            const answer = studentAnswer.value.trim();
+            
+            if (!answer) {
+                alert('Please enter a student answer to evaluate.');
+                return;
+            }
+
+            const question = modalQuestion.textContent;
+            
+            evaluateBtn.disabled = true;
+            evaluateBtn.textContent = 'Evaluating...';
+
+            try {
+                const response = await fetch(EVALUATE_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: question,
+                        answer: answer
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // Display evaluation result
+                let resultHTML = '';
+                if (data.score !== undefined) {
+                    resultHTML += `<strong>Score:</strong> ${data.score}/10<br>`;
+                }
+                if (data.feedback) {
+                    resultHTML += `<strong>Feedback:</strong> ${data.feedback}`;
+                } else if (data.evaluation) {
+                    // Handle case where API returns evaluation as text
+                    resultHTML += `<strong>Evaluation:</strong><br>${data.evaluation}`;
+                }
+                
+                evaluationResult.innerHTML = resultHTML || 'Evaluation completed.';
+                showElement(evaluationResult);
+                
+                // Also show result near the question in the list
+                const questionItem = questionsList.children[currentQuestionIndex];
+                if (questionItem) {
+                    let existingResult = questionItem.querySelector('.evaluation-result');
+                    if (!existingResult) {
+                        existingResult = document.createElement('div');
+                        existingResult.className = 'evaluation-result';
+                        // Insert before answer box if it exists
+                        const answerBox = questionItem.querySelector('.answer-box');
+                        if (answerBox) {
+                            questionItem.insertBefore(existingResult, answerBox);
+                        } else {
+                            questionItem.appendChild(existingResult);
+                        }
+                    }
+                    existingResult.innerHTML = resultHTML || 'Evaluation completed.';
+                    showElement(existingResult);
+                }
+
+            } catch (err) {
+                showError(`Failed to evaluate answer: ${err.message}. Please check your API connection.`);
+                console.error('Error:', err);
+            } finally {
+                evaluateBtn.disabled = false;
+                evaluateBtn.textContent = 'Evaluate';
+            }
+        });
+    </script>
+</body>
+</html>
+
